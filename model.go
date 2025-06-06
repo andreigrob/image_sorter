@@ -43,6 +43,9 @@ func (m *Model) Init(imagesDir string) {
 }
 
 func (m *Model) CurrentImage() (_ FileName) {
+	if len(m.images) == 0 {
+		return ""
+	}
 	return m.images[m.index]
 }
 
@@ -59,7 +62,10 @@ func (m *Model) GetName() (_ string) {
 }
 
 func (m *Model) GetTitle() (_ string) {
-	return ft.Sprintf("Image Viewer [%d/%d]", m.GetImageNum(), len(m.images))
+	if len(m.images) == 0 {
+		return m.GetName() + " [0/0]"
+	}
+	return ft.Sprintf("%s [%d/%d]", m.GetName(), m.GetImageNum(), len(m.images))
 }
 
 func (m *Model) Next() (_ bool) {
@@ -83,24 +89,23 @@ func (m *Model) MoveCurrentImage(folder string) (_ bool) {
 		return
 	}
 
-	current := string(m.CurrentImage())
-	base := fp.Base(current)
-
-	if err := os.MkdirAll(folder, 0o755); err != nil {
-		log.Printf("Error creating folder %s: %v\n", folder, err)
+	// create the folder if it doesn't exist
+	e := os.MkdirAll(folder, 0o755)
+	if e != nil {
+		log.Printf("Error creating folder %s: %v\n", folder, e)
 		return
 	}
 
-	dest := fp.Join(folder, base)
-	if err := os.Rename(current, dest); err != nil {
-		log.Printf("Error moving file: %v\n", err)
+	current := string(m.CurrentImage())
+	dest := fp.Join(folder, fp.Base(current))
+	if e = os.Rename(current, dest); e != nil {
+		log.Printf("Error moving file: %v\n", e)
 		return
 	}
 
 	m.images = append(m.images[:m.index], m.images[m.index+1:]...)
-	if m.index >= len(m.images) && m.index > 0 {
+	if m.index >= len(m.images) {
 		m.index--
 	}
-
 	return true
 }

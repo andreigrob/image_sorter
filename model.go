@@ -77,3 +77,30 @@ func (m *Model) Prev() (_ bool) {
 	}
 	return
 }
+
+func (m *Model) MoveCurrentImage(folder string) (_ bool) {
+	if len(m.images) == 0 {
+		return
+	}
+
+	current := string(m.CurrentImage())
+	base := fp.Base(current)
+
+	if err := os.MkdirAll(folder, 0o755); err != nil {
+		log.Printf("Error creating folder %s: %v\n", folder, err)
+		return
+	}
+
+	dest := fp.Join(folder, base)
+	if err := os.Rename(current, dest); err != nil {
+		log.Printf("Error moving file: %v\n", err)
+		return
+	}
+
+	m.images = append(m.images[:m.index], m.images[m.index+1:]...)
+	if m.index >= len(m.images) && m.index > 0 {
+		m.index--
+	}
+
+	return true
+}

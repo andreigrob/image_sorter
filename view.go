@@ -26,15 +26,15 @@ func (v *View) Init(a fy.App) {
 	v.img = fcv.NewImageFromFile(string(v.c.M.CurrentImage()))
 	v.img.FillMode = fcv.ImageFillContain
 
-	content := fct.NewVBox(
+	labels := fct.NewVBox(
 		v.label,
 		v.label2,
-		v.img,
-		fct.NewHBox(
-			fwg.NewButton(`Prev`, v.c.ShowPrevImage),
-			fwg.NewButton(`Next`, v.c.ShowNextImage),
-		),
 	)
+	buttons := fct.NewHBox(
+		fwg.NewButton(`Prev`, v.c.ShowPrevImage),
+		fwg.NewButton(`Next`, v.c.ShowNextImage),
+	)
+	content := fct.NewBorder(labels, buttons, nil, nil, v.img)
 
 	v.window = a.NewWindow(string(v.c.M.ImagesDir))
 	v.window.SetContent(content)

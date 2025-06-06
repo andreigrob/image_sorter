@@ -25,3 +25,9 @@ func (c *Controller) ShowPrevImage() {
 		c.V.ShowImage()
 	}
 }
+
+func (c *Controller) MoveImage(folder string) {
+	if c.M.MoveCurrentImage(folder) {
+		c.V.ShowImage()
+	}
+}

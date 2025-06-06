@@ -30,10 +30,17 @@ func (v *View) Init(a fy.App) {
 		v.label,
 		v.label2,
 	)
-	buttons := fct.NewHBox(
+	navButtons := fct.NewHBox(
 		fwg.NewButton(`Prev`, v.c.ShowPrevImage),
 		fwg.NewButton(`Next`, v.c.ShowNextImage),
 	)
+	sortButtons := fct.NewHBox(
+		fwg.NewButton(`Glass`, func() { v.c.MoveImage("glass") }),
+		fwg.NewButton(`Metal`, func() { v.c.MoveImage("metal") }),
+		fwg.NewButton(`Paper`, func() { v.c.MoveImage("paper") }),
+		fwg.NewButton(`Plastic`, func() { v.c.MoveImage("plastic") }),
+	)
+	buttons := fct.NewVBox(navButtons, sortButtons)
 	content := fct.NewBorder(labels, buttons, nil, nil, v.img)
 
 	v.window = a.NewWindow(string(v.c.M.ImagesDir))

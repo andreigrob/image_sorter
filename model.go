@@ -1,52 +1,60 @@
 package main
 
 import (
-	"log"
-	"os"
-
-	ft "fmt"
-	fp "path/filepath"
+        ft "fmt"
+        "log"
 )
 
+type DriveImage struct {
+        ID   string
+        Name string
+        Path string
+}
+
 type Model struct {
-	c         *Controller
-	ImagesDir FileName
-	images    []FileName
-	index     int
+        c        *Controller
+        Drive    *Drive
+        SourceID string
+        images   []DriveImage
+        index    int
 }
 
 func (m *Model) SetController(c *Controller) {
 	m.c = c
 }
 
-func (m *Model) Init(imagesDir string) {
-	m.ImagesDir = FileName(imagesDir)
-	m.index = 0
-	files, err := os.ReadDir(imagesDir)
-	if err != nil {
-		log.Fatalf("Error reading directory: %v\n", err)
-	}
+func (m *Model) Init(folderID string) {
+        m.SourceID = folderID
+        m.index = 0
+        if m.Drive == nil {
+                log.Fatal("Drive service not initialized")
+        }
 
-	// filter the files to only include pngs and jpgs
-	imageFiles := make([]FileName, 0, len(files))
-	var name FileName
-	var i int
-	for ; i < len(files); i++ {
-		if files[i].IsDir() {
-			continue
-		}
-		if name = FileName(files[i].Name()); name.HasExtension(`.png`, `.jpg`, `.jpeg`) {
-			imageFiles = append(imageFiles, FileName(fp.Join(imagesDir, string(name))))
-		}
-	}
-	m.images = imageFiles
+        files, err := m.Drive.ListImages(folderID)
+        if err != nil {
+                log.Fatalf("error listing drive folder: %v", err)
+        }
+
+        m.images = make([]DriveImage, len(files))
+        for i, f := range files {
+                m.images[i] = DriveImage{ID: f.Id, Name: f.Name}
+        }
 }
 
 func (m *Model) CurrentImage() (_ FileName) {
-	if len(m.images) == 0 {
-		return ""
-	}
-	return m.images[m.index]
+        if len(m.images) == 0 {
+                return ""
+        }
+        img := &m.images[m.index]
+        if img.Path == "" {
+                path, err := m.Drive.DownloadFile(img.ID, img.Name)
+                if err != nil {
+                        log.Printf("error downloading file: %v", err)
+                        return ""
+                }
+                img.Path = path
+        }
+        return FileName(img.Path)
 }
 
 func (m *Model) GetImageNum() (_ int) {
@@ -85,27 +93,25 @@ func (m *Model) Prev() (_ bool) {
 }
 
 func (m *Model) MoveCurrentImage(folder string) (_ bool) {
-	if len(m.images) == 0 {
-		return
-	}
+        if len(m.images) == 0 {
+                return
+        }
 
-	// create the folder if it doesn't exist
-	e := os.MkdirAll(folder, 0o755)
-	if e != nil {
-		log.Printf("Error creating folder %s: %v\n", folder, e)
-		return
-	}
+        destID, ok := m.Drive.Destinations[folder]
+        if !ok {
+                log.Printf("destination folder %s not configured", folder)
+                return
+        }
 
-	current := string(m.CurrentImage())
-	dest := fp.Join(folder, fp.Base(current))
-	if e = os.Rename(current, dest); e != nil {
-		log.Printf("Error moving file: %v\n", e)
-		return
-	}
+        img := m.images[m.index]
+        if err := m.Drive.MoveFile(img.ID, destID); err != nil {
+                log.Printf("error moving file: %v", err)
+                return
+        }
 
-	m.images = append(m.images[:m.index], m.images[m.index+1:]...)
-	if m.index >= len(m.images) {
-		m.index--
-	}
-	return true
+        m.images = append(m.images[:m.index], m.images[m.index+1:]...)
+        if m.index >= len(m.images) {
+                m.index--
+        }
+        return true
 }

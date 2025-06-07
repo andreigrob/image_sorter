@@ -21,9 +21,10 @@ func (v *View) SetController(c *Controller) {
 	v.c = c
 }
 
-func (v *View) MoveButton(folder string) (_ *fwg.Button) {
+func (v *View) MoveButton(folder string) (button *fwg.Button) {
 	folderName := st.ToLower(folder)
-	return fwg.NewButton(folder, func() { v.c.MoveImage(folderName) })
+	button = fwg.NewButton(folder, func() { v.c.MoveImage(folderName) })
+	return button
 }
 
 func (v *View) MoveButtons(folders ...string) (_ []fy.CanvasObject) {
@@ -52,6 +53,9 @@ func (v *View) Init(a fy.App) {
 	)
 	sortButtons := fct.NewHBox(v.MoveButtons(`Glass`, `Metal`, `Paper`, `Plastic`)...)
 	buttons := fct.NewVBox(navButtons, sortButtons)
+	// resize the buttons to be 1000px wide and 300px tall
+	buttons.Resize(fy.NewSize(1000, 300))
+
 	content := fct.NewBorder(labels, buttons, nil, nil, v.img)
 
 	v.window = a.NewWindow("")

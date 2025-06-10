@@ -54,7 +54,7 @@ func (v *View) Init(a fy.App) {
 	buttons := fct.NewVBox(navButtons, sortButtons)
 	content := fct.NewBorder(labels, buttons, nil, nil, v.img)
 
-	v.window = a.NewWindow("")
+	v.window = a.NewWindow(``)
 	v.window.SetContent(content)
 	v.window.Resize(fy.NewSize(800, 600))
 }
@@ -67,7 +67,7 @@ func (v *View) SetTitle(title string) {
 func (v *View) ShowImage() {
 	v.SetTitle(v.c.M.GetTitle())
 	currentImage := string(v.c.M.CurrentImage())
-	if currentImage == "" {
+	if currentImage == `` {
 		v.img.File = `no_images.png`
 	} else {
 		v.img.File = currentImage

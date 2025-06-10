@@ -1,22 +1,21 @@
 package main
 
 import (
-        ft "fmt"
-        "log"
+	ft "fmt"
+	"log"
 )
 
 type DriveImage struct {
-        ID   string
-        Name string
-        Path string
+	ID   string
+	Name string
+	Path string
 }
 
 type Model struct {
-        c        *Controller
-        Drive    *Drive
-        SourceID string
-        images   []DriveImage
-        index    int
+	c        *Controller
+	SourceID string
+	images   []DriveImage
+	index    int
 }
 
 func (m *Model) SetController(c *Controller) {
@@ -24,37 +23,34 @@ func (m *Model) SetController(c *Controller) {
 }
 
 func (m *Model) Init(folderID string) {
-        m.SourceID = folderID
-        m.index = 0
-        if m.Drive == nil {
-                log.Fatal("Drive service not initialized")
-        }
+	m.SourceID = folderID
+	m.index = 0
 
-        files, err := m.Drive.ListImages(folderID)
-        if err != nil {
-                log.Fatalf("error listing drive folder: %v", err)
-        }
+	files, err := m.c.D.ListImages(folderID)
+	if err != nil {
+		log.Fatalf("error listing drive folder: %v", err)
+	}
 
-        m.images = make([]DriveImage, len(files))
-        for i, f := range files {
-                m.images[i] = DriveImage{ID: f.Id, Name: f.Name}
-        }
+	m.images = make([]DriveImage, len(files))
+	for i, f := range files {
+		m.images[i] = DriveImage{ID: f.Id, Name: f.Name}
+	}
 }
 
 func (m *Model) CurrentImage() (_ FileName) {
-        if len(m.images) == 0 {
-                return ""
-        }
-        img := &m.images[m.index]
-        if img.Path == "" {
-                path, err := m.Drive.DownloadFile(img.ID, img.Name)
-                if err != nil {
-                        log.Printf("error downloading file: %v", err)
-                        return ""
-                }
-                img.Path = path
-        }
-        return FileName(img.Path)
+	if len(m.images) == 0 {
+		return ""
+	}
+	img := &m.images[m.index]
+	if img.Path == "" {
+		path, err := m.c.D.DownloadFile(img.ID, img.Name)
+		if err != nil {
+			log.Printf("error downloading file: %v", err)
+			return ""
+		}
+		img.Path = path
+	}
+	return FileName(img.Path)
 }
 
 func (m *Model) GetImageNum() (_ int) {
@@ -66,7 +62,7 @@ func (m *Model) GetLenImages() (_ int) {
 }
 
 func (m *Model) GetName() (_ string) {
-	return "Image Sorter"
+	return `Image Sorter`
 }
 
 func (m *Model) GetTitle() (_ string) {
@@ -93,25 +89,25 @@ func (m *Model) Prev() (_ bool) {
 }
 
 func (m *Model) MoveCurrentImage(folder string) (_ bool) {
-        if len(m.images) == 0 {
-                return
-        }
+	if len(m.images) == 0 {
+		return
+	}
 
-        destID, ok := m.Drive.Destinations[folder]
-        if !ok {
-                log.Printf("destination folder %s not configured", folder)
-                return
-        }
+	destID, ok := m.c.D.Destinations[folder]
+	if !ok {
+		log.Printf("destination folder %s not configured", folder)
+		return
+	}
 
-        img := m.images[m.index]
-        if err := m.Drive.MoveFile(img.ID, destID); err != nil {
-                log.Printf("error moving file: %v", err)
-                return
-        }
+	img := m.images[m.index]
+	if err := m.c.D.MoveFile(img.ID, destID); err != nil {
+		log.Printf("error moving file: %v", err)
+		return
+	}
 
-        m.images = append(m.images[:m.index], m.images[m.index+1:]...)
-        if m.index >= len(m.images) {
-                m.index--
-        }
-        return true
+	m.images = append(m.images[:m.index], m.images[m.index+1:]...)
+	if m.index >= len(m.images) {
+		m.index--
+	}
+	return true
 }

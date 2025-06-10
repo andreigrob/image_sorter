@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	ct "context"
 	"log"
 	"os"
 
@@ -17,30 +17,33 @@ func main() {
 	credFile := os.Args[1]
 	folderName := os.Args[2]
 
-	ctx := context.Background()
-	driveSvc, err := NewDrive(ctx, credFile)
-	if err != nil {
-		log.Fatalf("unable to create drive service: %v", err)
-	}
-
-	// initialize known destination folders if they exist
-	for _, name := range []string{"glass", "metal", "paper", "plastic"} {
-		id, err := driveSvc.FindFolderID(name)
-		if err != nil {
-			log.Printf("warning: folder %s not found: %v", name, err)
-			continue
-		}
-		driveSvc.Destinations[name] = id
-	}
-
-	imageViewer := &Controller{D: driveSvc}
+	ctx := ct.Background()
+	imageViewer := &Controller{}
 	imageViewer.Init()
 
-	folderID, err := driveSvc.FindFolderID(folderName)
-	if err != nil {
-		log.Fatalf("unable to find folder %s: %v", folderName, err)
+	e := imageViewer.D.Init(ctx, credFile)
+	if e != nil {
+		log.Fatalf("unable to create drive service: %v", e)
+	}
+
+	folderID, e := imageViewer.D.FindFolderID(folderName)
+	if e != nil {
+		log.Fatalf("unable to find folder %s: %v", folderName, e)
 	}
 	imageViewer.M.Init(folderID)
+
+	// initialize known destination folders if they exist
+	folders := []string{`glass`, `metal`, `paper`, `plastic`}
+	var id string
+	var i int
+	for ; i < len(folders); i++ {
+		id, e = imageViewer.D.FindFolderID(folders[i])
+		if e != nil {
+			log.Printf("warning: folder %s not found: %v", folders[i], e)
+			continue
+		}
+		imageViewer.D.Destinations[folders[i]] = id
+	}
 
 	myApp := fa.New()
 	imageViewer.V.Init(myApp)

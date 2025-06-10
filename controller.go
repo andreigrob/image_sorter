@@ -1,9 +1,9 @@
 package main
 
 type Controller struct {
-        M Model
-        V View
-        D *Drive
+	M Model
+	V View
+	D Drive
 }
 
 func (c *Controller) Start() {
@@ -11,9 +11,8 @@ func (c *Controller) Start() {
 }
 
 func (c *Controller) Init() {
-        c.M.SetController(c)
-        c.V.SetController(c)
-        c.M.Drive = c.D
+	c.M.SetController(c)
+	c.V.SetController(c)
 }
 
 func (c *Controller) ShowNextImage() {

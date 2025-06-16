@@ -1,0 +1,52 @@
+package main
+
+import (
+	"fmt"
+	"log"
+
+	ct "context"
+
+	gc "github.com/andreigrob/gdrive/gclient"
+
+	dr "google.golang.org/api/drive/v3"
+	opt "google.golang.org/api/option"
+)
+
+func main() {
+	const credentials = `credentials.json`
+	const tokenName = `token.json`
+	const scope = dr.DriveScope
+
+	ctx, cancel := ct.WithCancel(ct.Background())
+	defer cancel()
+
+	gClient := gc.NewGClient(ctx, credentials, tokenName, scope)
+
+	_ = gClient.CheckScope()
+	httpCl := gClient.NewHttpClient()
+
+	gDrive, e := dr.NewService(ctx, opt.WithHTTPClient(httpCl))
+	if e != nil {
+		log.Printf("Unable to retrieve GDrive client: %v", e)
+		return
+	}
+
+	const fields = `nextPageToken, files(id, name)`
+	res, e := gDrive.Files.List().PageSize(10).Fields(fields).Do()
+	if e != nil {
+		log.Printf("Unable to retrieve GDrive files: %v", e)
+		return
+	}
+
+	Len := len(res.Files)
+	if Len == 0 {
+		fmt.Println("No files found.")
+		return
+	}
+
+	fmt.Println("Files:")
+	var i int
+	for ; i < Len; i++ {
+		fmt.Printf("%s (%s)\n", res.Files[i].Name, res.Files[i].Id)
+	}
+}

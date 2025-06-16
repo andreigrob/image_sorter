@@ -1,5 +1,8 @@
 image_sorter
 *~
 images/
-credentials*.json
+paper/
+*.json
+*.json.*
+scope.txt
 
